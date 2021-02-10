@@ -2,43 +2,54 @@
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageView;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.ExecutionException;
 
  public class MainActivity extends AppCompatActivity {
 
-     public class DownloadTask extends AsyncTask<String, Void, String> { // class which will do the download work
+     ImageView imageView;
+
+    public void downloadButton(View view){
+        Log.i("Info", "Button is working");
+        ImageDownloader obj = new ImageDownloader();
+        try {
+            Bitmap myImage = obj.execute("https://lh3.googleusercontent.com/proxy/69ZQNEQJBJ1pVBzwBKE1YoUVPGDw8dG2PP7WbfV2ukWLuoB75-ObyXCqfRYecdsvLGEC_TbOH9w6zZuztDv_oc0t2K-C5yKWlJf6aMQGG7h227enbwE8J1AglkUPeqLXWg").get();
+            imageView.setImageBitmap(myImage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public class ImageDownloader extends AsyncTask<String, Void, Bitmap>{
+        HttpURLConnection connection;
 
         @Override
-        protected String doInBackground(String... urls) {
-            // Log.i("URL", strings[0]); // printing the passed string with log
-            // extracting html from URL
-            String result = null;
-            URL url;
-            HttpURLConnection urlConnection = null;
+        protected Bitmap doInBackground(String... urls) {
             try {
-                url = new URL(urls[0]); // converting string into url
-                urlConnection = (HttpURLConnection) url.openConnection(); // connecting with the url
-                InputStream in = urlConnection.getInputStream(); //  creating a data stream with url
-                InputStreamReader reader = new InputStreamReader(in); // reading object
-                int data = reader.read();
-                while(data != -1){ // till document is ended
-                    char current = (char) data; // extracts character
-                    result += current; // adds char by char
-                    data = reader.read();
-                }
-                return result;
-            } catch(Exception e){
+                URL url = new URL(urls[0]);
+                connection = (HttpURLConnection) url.openConnection();
+                InputStream in = new BufferedInputStream(connection.getInputStream()); // buffered in imp and add network access permission
+                Bitmap myBitmap = BitmapFactory.decodeStream(in);
+                return myBitmap;
+            } catch (Exception e) {
                 e.printStackTrace();
-                return "Failed";
+                return null;
+            } finally {
+                connection.disconnect();
             }
         }
     }
@@ -47,14 +58,6 @@ import java.net.URL;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        DownloadTask task = new DownloadTask();
-        String result = null;
-        try {
-            result = task.execute("https://www.zappy.com").get(); // passing the website string to the above function
-        } catch(Exception e){
-            e.printStackTrace();
-        }
-        Log.i("Result", result);
+        imageView = findViewById(R.id.imageView);
     }
-}
+ }
